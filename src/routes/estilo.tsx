@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
 import { Music, Mic2, Guitar, Radio, Music2, Music3, Disc3, Piano } from "lucide-react";
+import { useMusicStore } from "@/stores/useMusicStore";
 
 export const Route = createFileRoute("/estilo")({
   component: StylePage,
@@ -19,7 +19,13 @@ const styles = [
 
 function StylePage() {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<string | null>(null);
+  const selectedStyle = useMusicStore((s) => s.selectedStyle);
+  const setSelectedStyle = useMusicStore((s) => s.setSelectedStyle);
+
+  const handlePick = (label: string) => {
+    setSelectedStyle(label);
+    navigate({ to: "/processando" });
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -32,11 +38,11 @@ function StylePage() {
 
       <div className="grid grid-cols-2 gap-3">
         {styles.map(({ label, icon: Icon }) => {
-          const active = selected === label;
+          const active = selectedStyle === label;
           return (
             <button
               key={label}
-              onClick={() => setSelected(label)}
+              onClick={() => handlePick(label)}
               className={`flex flex-col items-start gap-3 rounded-2xl border p-4 text-left transition-all ${
                 active
                   ? "border-transparent btn-gradient"
@@ -53,7 +59,9 @@ function StylePage() {
       </div>
 
       <button
-        onClick={() => navigate({ to: "/processando" })}
+        onClick={() => {
+          if (selectedStyle) navigate({ to: "/processando" });
+        }}
         className="mt-auto w-full rounded-2xl btn-gradient py-4 text-base font-bold"
       >
         Gerar Música
