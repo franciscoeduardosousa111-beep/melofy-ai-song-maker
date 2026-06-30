@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
 import { Cake, Heart, Church, Laugh, Flame, PartyPopper } from "lucide-react";
+import { useMusicStore } from "@/stores/useMusicStore";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -17,8 +17,15 @@ const occasions = [
 
 function HomePage() {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<string | null>(null);
-  const [desc, setDesc] = useState("");
+  const occasion = useMusicStore((s) => s.occasion);
+  const customDescription = useMusicStore((s) => s.customDescription);
+  const setOccasion = useMusicStore((s) => s.setOccasion);
+  const setCustomDescription = useMusicStore((s) => s.setCustomDescription);
+
+  const handlePick = (label: string) => {
+    setOccasion(label);
+    navigate({ to: "/estilo" });
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -31,11 +38,11 @@ function HomePage() {
 
       <div className="grid grid-cols-2 gap-3">
         {occasions.map(({ label, icon: Icon }) => {
-          const active = selected === label;
+          const active = occasion === label;
           return (
             <button
               key={label}
-              onClick={() => setSelected(label)}
+              onClick={() => handlePick(label)}
               className={`flex flex-col items-start gap-2 rounded-2xl border p-4 text-left transition-all ${
                 active
                   ? "border-transparent btn-gradient"
@@ -54,8 +61,8 @@ function HomePage() {
           Ou descreva você mesmo
         </label>
         <textarea
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
+          value={customDescription}
+          onChange={(e) => setCustomDescription(e.target.value)}
           placeholder="Descreva sua música..."
           rows={4}
           className="w-full resize-none rounded-2xl border border-border/60 bg-surface px-4 py-3 text-sm placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
@@ -63,7 +70,10 @@ function HomePage() {
       </div>
 
       <button
-        onClick={() => navigate({ to: "/estilo" })}
+        onClick={() => {
+          if (!occasion && customDescription.trim()) setOccasion("Personalizada");
+          navigate({ to: "/estilo" });
+        }}
         className="mt-auto w-full rounded-2xl btn-gradient py-4 text-base font-bold"
       >
         Continuar
