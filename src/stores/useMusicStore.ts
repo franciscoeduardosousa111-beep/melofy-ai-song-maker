@@ -38,8 +38,11 @@ type MusicState = {
   setSelectedPlan: (plan: string) => void;
   setLoggedIn: (v: boolean) => void;
   setStep: (step: number) => void;
+  setLyrics: (lyrics: string) => void;
+  setAudioUrl: (url: string | null) => void;
+  setProcessingStatus: (status: ProcessingStatus) => void;
+  setIsGenerating: (v: boolean) => void;
   reset: () => void;
-  generateMusic: () => Promise<void>;
 };
 
 const initialState = {
