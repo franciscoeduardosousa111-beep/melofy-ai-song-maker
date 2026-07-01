@@ -38,8 +38,11 @@ type MusicState = {
   setSelectedPlan: (plan: string) => void;
   setLoggedIn: (v: boolean) => void;
   setStep: (step: number) => void;
+  setLyrics: (lyrics: string) => void;
+  setAudioUrl: (url: string | null) => void;
+  setProcessingStatus: (status: ProcessingStatus) => void;
+  setIsGenerating: (v: boolean) => void;
   reset: () => void;
-  generateMusic: () => Promise<void>;
 };
 
 const initialState = {
@@ -68,26 +71,11 @@ export const useMusicStore = create<MusicState>()(
       setSelectedPlan: (selectedPlan) => set({ selectedPlan }),
       setLoggedIn: (isLoggedIn) => set({ isLoggedIn }),
       setStep: (step) => set({ step }),
+      setLyrics: (generatedLyrics) => set({ generatedLyrics }),
+      setAudioUrl: (audioUrl) => set({ audioUrl }),
+      setProcessingStatus: (processingStatus) => set({ processingStatus }),
+      setIsGenerating: (isGenerating) => set({ isGenerating }),
       reset: () => set({ ...initialState }),
-
-      generateMusic: async () => {
-        set({
-          isGenerating: true,
-          generatedLyrics: "",
-          audioUrl: null,
-          processingStatus: PROCESSING_STATUSES[0],
-        });
-        await wait(1000);
-        set({ processingStatus: PROCESSING_STATUSES[1] });
-        await wait(1000);
-        set({ generatedLyrics: MOCK_LYRICS, processingStatus: PROCESSING_STATUSES[2] });
-        await wait(2000);
-        set({
-          isGenerating: false,
-          audioUrl: "/mock-audio.mp3",
-          step: 4,
-        });
-      },
     }),
     {
       name: "melofy-music-store",
