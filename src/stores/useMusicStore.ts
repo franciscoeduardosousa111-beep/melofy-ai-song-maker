@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 export const MOCK_LYRICS = `Tua Graça Me Alcançou
 
@@ -28,10 +29,14 @@ type MusicState = {
   isGenerating: boolean;
   step: number;
   processingStatus: ProcessingStatus;
+  selectedPlan: string;
+  isLoggedIn: boolean;
 
   setOccasion: (occasion: string) => void;
   setCustomDescription: (description: string) => void;
   setSelectedStyle: (style: string) => void;
+  setSelectedPlan: (plan: string) => void;
+  setLoggedIn: (v: boolean) => void;
   setStep: (step: number) => void;
   reset: () => void;
   generateMusic: () => Promise<void>;
@@ -46,35 +51,65 @@ const initialState = {
   isGenerating: false,
   step: 1,
   processingStatus: "" as ProcessingStatus,
+  selectedPlan: "5",
+  isLoggedIn: false,
 };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export const useMusicStore = create<MusicState>((set) => ({
-  ...initialState,
+export const useMusicStore = create<MusicState>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setOccasion: (occasion) => set({ occasion, step: 2 }),
-  setCustomDescription: (customDescription) => set({ customDescription }),
-  setSelectedStyle: (selectedStyle) => set({ selectedStyle, step: 3 }),
-  setStep: (step) => set({ step }),
-  reset: () => set({ ...initialState }),
+      setOccasion: (occasion) => set({ occasion, step: 2 }),
+      setCustomDescription: (customDescription) => set({ customDescription }),
+      setSelectedStyle: (selectedStyle) => set({ selectedStyle, step: 3 }),
+      setSelectedPlan: (selectedPlan) => set({ selectedPlan }),
+      setLoggedIn: (isLoggedIn) => set({ isLoggedIn }),
+      setStep: (step) => set({ step }),
+      reset: () => set({ ...initialState }),
 
-  generateMusic: async () => {
-    set({
-      isGenerating: true,
-      generatedLyrics: "",
-      audioUrl: null,
-      processingStatus: PROCESSING_STATUSES[0],
-    });
-    await wait(1000);
-    set({ processingStatus: PROCESSING_STATUSES[1] });
-    await wait(1000);
-    set({ generatedLyrics: MOCK_LYRICS, processingStatus: PROCESSING_STATUSES[2] });
-    await wait(2000);
-    set({
-      isGenerating: false,
-      audioUrl: "/mock-audio.mp3",
-      step: 4,
-    });
-  },
-}));
+      generateMusic: async () => {
+        set({
+          isGenerating: true,
+          generatedLyrics: "",
+          audioUrl: null,
+          processingStatus: PROCESSING_STATUSES[0],
+        });
+        await wait(1000);
+        set({ processingStatus: PROCESSING_STATUSES[1] });
+        await wait(1000);
+        set({ generatedLyrics: MOCK_LYRICS, processingStatus: PROCESSING_STATUSES[2] });
+        await wait(2000);
+        set({
+          isGenerating: false,
+          audioUrl: "/mock-audio.mp3",
+          step: 4,
+        });
+      },
+    }),
+    {
+      name: "melofy-music-store",
+      storage: createJSONStorage(() =>
+        typeof window !== "undefined"
+          ? window.localStorage
+          : {
+              getItem: () => null,
+              setItem: () => {},
+              removeItem: () => {},
+            }
+      ),
+      partialize: (state) => ({
+        occasion: state.occasion,
+        customDescription: state.customDescription,
+        selectedStyle: state.selectedStyle,
+        generatedLyrics: state.generatedLyrics,
+        audioUrl: state.audioUrl,
+        selectedPlan: state.selectedPlan,
+        isLoggedIn: state.isLoggedIn,
+        step: state.step,
+      }),
+    }
+  )
+);
