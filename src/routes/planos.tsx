@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
 import { Check, Sparkles } from "lucide-react";
+import { useMusicStore } from "@/stores/useMusicStore";
 
 export const Route = createFileRoute("/planos")({
   component: PlansPage,
@@ -14,7 +14,13 @@ const plans = [
 
 function PlansPage() {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState("5");
+  const selected = useMusicStore((s) => s.selectedPlan);
+  const setSelectedPlan = useMusicStore((s) => s.setSelectedPlan);
+
+  const handlePick = (id: string) => {
+    setSelectedPlan(id);
+    navigate({ to: "/pagamento" });
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -31,7 +37,7 @@ function PlansPage() {
           return (
             <button
               key={plan.id}
-              onClick={() => setSelected(plan.id)}
+              onClick={() => handlePick(plan.id)}
               className={`relative flex items-center justify-between rounded-2xl border p-5 text-left transition-all ${
                 active
                   ? "border-transparent btn-gradient"
