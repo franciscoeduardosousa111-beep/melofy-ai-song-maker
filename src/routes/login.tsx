@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Mail, Apple } from "lucide-react";
+import { useMusicStore } from "@/stores/useMusicStore";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -7,13 +8,17 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const setLoggedIn = useMusicStore((s) => s.setLoggedIn);
+
+  const handleLogin = () => {
+    setLoggedIn(true);
+    navigate({ to: "/planos" });
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="text-center">
-        <h1 className="text-3xl font-extrabold leading-tight">
-          Quase lá!
-        </h1>
+        <h1 className="text-3xl font-extrabold leading-tight">Quase lá!</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Entre para baixar sua música completa.
         </p>
@@ -24,7 +29,7 @@ function LoginPage() {
       </div>
 
       <button
-        onClick={() => navigate({ to: "/planos" })}
+        onClick={handleLogin}
         className="flex items-center justify-center gap-3 rounded-2xl bg-white py-4 text-sm font-bold text-neutral-900 shadow-lg"
       >
         <svg width="20" height="20" viewBox="0 0 24 24">
@@ -37,7 +42,7 @@ function LoginPage() {
       </button>
 
       <button
-        onClick={() => navigate({ to: "/planos" })}
+        onClick={handleLogin}
         className="flex items-center justify-center gap-3 rounded-2xl border border-border/60 bg-surface py-4 text-sm font-bold"
       >
         <Apple className="h-5 w-5" /> Entrar com Apple
