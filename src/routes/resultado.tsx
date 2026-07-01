@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Play, Pause, Download, Share2 } from "lucide-react";
+import { Play, Pause, Download, Share2, Sparkles } from "lucide-react";
+import { useMusicStore } from "@/stores/useMusicStore";
 
 export const Route = createFileRoute("/resultado")({
   component: ResultPage,
@@ -9,15 +10,21 @@ export const Route = createFileRoute("/resultado")({
 function ResultPage() {
   const navigate = useNavigate();
   const [playing, setPlaying] = useState(false);
+  const generatedLyrics = useMusicStore((s) => s.generatedLyrics);
+  const selectedStyle = useMusicStore((s) => s.selectedStyle);
+  const audioUrl = useMusicStore((s) => s.audioUrl);
+
+  const title = generatedLyrics.split("\n")[0] || "Tua Graça Me Alcançou";
+  const lyricsBody = generatedLyrics.split("\n").slice(1).join("\n").trim();
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Sua música</p>
-        <h1 className="mt-1 text-3xl font-extrabold leading-tight text-gradient-brand">
-          Tua Graça Me Alcançou
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Estilo Acústico · 2:34</p>
+        <h1 className="mt-1 text-3xl font-extrabold leading-tight text-gradient-brand">{title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Estilo {selectedStyle || "Acústico"} · 2:34
+        </p>
       </div>
 
       <div className="rounded-3xl bg-gradient-to-br from-brand-pink/30 to-brand-violet/40 p-6">
@@ -34,12 +41,26 @@ function ResultPage() {
               <div className={`h-full rounded-full bg-white transition-all ${playing ? "w-2/3" : "w-1/4"}`} />
             </div>
             <div className="flex justify-between text-[11px] text-white/70">
-              <span>0:48</span>
+              <span>{playing ? "1:32" : "0:00"}</span>
               <span>2:34</span>
             </div>
           </div>
         </div>
+        {audioUrl && (
+          <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-white/60">
+            Prévia · 30s
+          </p>
+        )}
       </div>
+
+      {lyricsBody && (
+        <div className="rounded-2xl border border-border/60 bg-surface p-5">
+          <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5" /> Letra
+          </div>
+          <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{lyricsBody}</pre>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <button className="flex items-center justify-center gap-2 rounded-xl border border-border/60 bg-surface py-3 text-sm font-semibold">
