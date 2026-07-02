@@ -26,7 +26,7 @@ function StylePage() {
   const selectedStyle = useMusicStore((s) => s.selectedStyle);
   const setSelectedStyle = useMusicStore((s) => s.setSelectedStyle);
 
-  const handlePick = (label: string) => {
+  const handlePick = (label: MusicStyle) => {
     setSelectedStyle(label);
     navigate({ to: "/processando" });
   };
