@@ -2,10 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { MUSIC_STYLES } from "./styles";
 
 const LyricsInput = z.object({
   occasion: z.string().min(1),
-  style: z.string().min(1),
+  style: z.enum(MUSIC_STYLES),
   description: z.string().optional().default(""),
 });
 
@@ -16,7 +17,7 @@ export const generateLyrics = createServerFn({ method: "POST" })
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
     const gateway = createLovableAiGatewayProvider(key);
-    const isGospel = data.style.trim().toLowerCase() === "gospel";
+    const isGospel = data.style === "Gospel";
     const gospelExtras = isGospel
       ? " A letra deve ter temática cristã, com mensagens de fé, louvor e gratidão. Inclua referências bíblicas ou expressões como 'Aleluia', 'Senhor', 'Graça'."
       : "";
