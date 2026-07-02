@@ -53,8 +53,9 @@ function ProcessingPage() {
         setLyrics(lyrics);
 
         setProcessingStatus(PROCESSING_STATUSES[2]);
+        const title = lyrics.split("\n")[0]?.trim() || "Minha Música";
         const { audioUrl: url } = await callMusic({
-          data: { lyrics, style: selectedStyle || "Pop BR" },
+          data: { lyrics, style: selectedStyle || "Pop BR", title },
         });
         setAudioUrl(url);
         setStep(4);
