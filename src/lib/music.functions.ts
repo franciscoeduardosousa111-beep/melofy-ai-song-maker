@@ -16,7 +16,11 @@ export const generateLyrics = createServerFn({ method: "POST" })
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
     const gateway = createLovableAiGatewayProvider(key);
-    const prompt = `Crie uma letra de música no estilo ${data.style} para a ocasião ${data.occasion}. Detalhes: ${data.description || "sem detalhes adicionais"}. A letra deve ter 2 versos e 1 refrão. A primeira linha deve ser o título da música. Retorne apenas a letra, sem comentários ou explicações.`;
+    const isGospel = data.style.trim().toLowerCase() === "gospel";
+    const gospelExtras = isGospel
+      ? " A letra deve ter temática cristã, com mensagens de fé, louvor e gratidão. Inclua referências bíblicas ou expressões como 'Aleluia', 'Senhor', 'Graça'."
+      : "";
+    const prompt = `Crie uma letra de música no estilo ${data.style} para a ocasião ${data.occasion}. Detalhes: ${data.description || "sem detalhes adicionais"}.${gospelExtras} A letra deve ter 2 versos e 1 refrão. A primeira linha deve ser o título da música. Retorne apenas a letra, sem comentários ou explicações.`;
 
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
