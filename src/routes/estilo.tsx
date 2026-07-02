@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Music, Mic2, Guitar, Radio, Music2, Music3, Disc3, Piano } from "lucide-react";
+import { Music, Mic2, Guitar, Radio, Music2, Music3, Disc3, Piano, Cross } from "lucide-react";
 import { useMusicStore } from "@/stores/useMusicStore";
 
 export const Route = createFileRoute("/estilo")({
@@ -15,6 +15,7 @@ const styles = [
   { label: "MPB & Alt", icon: Music3 },
   { label: "Anos 80", icon: Disc3 },
   { label: "Clássica", icon: Piano },
+  { label: "Gospel", icon: Cross },
 ];
 
 function StylePage() {
