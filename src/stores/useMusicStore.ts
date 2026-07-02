@@ -24,7 +24,7 @@ export type ProcessingStatus = (typeof PROCESSING_STATUSES)[number] | "";
 type MusicState = {
   occasion: string;
   customDescription: string;
-  selectedStyle: string;
+  selectedStyle: MusicStyle | "";
   generatedLyrics: string;
   audioUrl: string | null;
   isGenerating: boolean;
@@ -35,7 +35,7 @@ type MusicState = {
 
   setOccasion: (occasion: string) => void;
   setCustomDescription: (description: string) => void;
-  setSelectedStyle: (style: string) => void;
+  setSelectedStyle: (style: MusicStyle) => void;
   setSelectedPlan: (plan: string) => void;
   setLoggedIn: (v: boolean) => void;
   setStep: (step: number) => void;
