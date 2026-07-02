@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import type { MusicStyle } from "@/lib/styles";
 
 export const MOCK_LYRICS = `Tua Graça Me Alcançou
 
