@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import type { MusicStyle } from "@/lib/styles";
 
 export const MOCK_LYRICS = `Tua Graça Me Alcançou
 
@@ -23,7 +24,7 @@ export type ProcessingStatus = (typeof PROCESSING_STATUSES)[number] | "";
 type MusicState = {
   occasion: string;
   customDescription: string;
-  selectedStyle: string;
+  selectedStyle: MusicStyle | "";
   generatedLyrics: string;
   audioUrl: string | null;
   isGenerating: boolean;
@@ -34,7 +35,7 @@ type MusicState = {
 
   setOccasion: (occasion: string) => void;
   setCustomDescription: (description: string) => void;
-  setSelectedStyle: (style: string) => void;
+  setSelectedStyle: (style: MusicStyle) => void;
   setSelectedPlan: (plan: string) => void;
   setLoggedIn: (v: boolean) => void;
   setStep: (step: number) => void;
@@ -45,15 +46,27 @@ type MusicState = {
   reset: () => void;
 };
 
-const initialState = {
+const initialState: Pick<
+  MusicState,
+  | "occasion"
+  | "customDescription"
+  | "selectedStyle"
+  | "generatedLyrics"
+  | "audioUrl"
+  | "isGenerating"
+  | "step"
+  | "processingStatus"
+  | "selectedPlan"
+  | "isLoggedIn"
+> = {
   occasion: "",
   customDescription: "",
   selectedStyle: "",
   generatedLyrics: "",
-  audioUrl: null as string | null,
+  audioUrl: null,
   isGenerating: false,
   step: 1,
-  processingStatus: "" as ProcessingStatus,
+  processingStatus: "",
   selectedPlan: "5",
   isLoggedIn: false,
 };
