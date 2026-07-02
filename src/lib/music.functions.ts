@@ -66,14 +66,107 @@ Retorne apenas a letra, sem introduções ou explicações.`;
 const MusicInput = z.object({
   lyrics: z.string().min(1),
   style: z.string().min(1),
+  title: z.string().optional(),
 });
+
+const APIFRAME_BASE = "https://apiframe.ai/v2";
+const POLL_INTERVAL_MS = 5000;
+const POLL_TIMEOUT_MS = 180_000;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const generateMusic = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => MusicInput.parse(input))
   .handler(async ({ data }) => {
-    // Substituir pela API do Suno quando assinado.
-    void data;
-    return {
-      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    const apiKey = process.env.APIFRAME_API_KEY;
+    if (!apiKey) throw new Error("Missing APIFRAME_API_KEY");
+
+    const headers = {
+      "Content-Type": "application/json",
+      "X-API-Key": apiKey,
     };
+
+    // 1. Enqueue job
+    let submitRes: Response;
+    try {
+      submitRes = await fetch(`${APIFRAME_BASE}/music/generate`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "suno",
+          prompt: data.lyrics,
+          sunoParams: {
+            custom_mode: true,
+            style: data.style,
+            title: data.title || "Minha Música",
+          },
+        }),
+      });
+    } catch (err) {
+      console.error("[apiframe] submit failed", err);
+      throw new Error("Não foi possível iniciar a geração da música.");
+    }
+
+    if (!submitRes.ok) {
+      const text = await submitRes.text().catch(() => "");
+      console.error("[apiframe] submit non-ok", submitRes.status, text);
+      throw new Error("Falha ao solicitar geração da música.");
+    }
+
+    const submitJson = (await submitRes.json()) as {
+      jobId?: string;
+      id?: string;
+      data?: { jobId?: string; id?: string };
+    };
+    const jobId =
+      submitJson.jobId ||
+      submitJson.id ||
+      submitJson.data?.jobId ||
+      submitJson.data?.id;
+    if (!jobId) {
+      console.error("[apiframe] no jobId in response", submitJson);
+      throw new Error("Resposta inválida do serviço de música.");
+    }
+
+    // 2. Poll
+    const started = Date.now();
+    while (Date.now() - started < POLL_TIMEOUT_MS) {
+      await sleep(POLL_INTERVAL_MS);
+      let pollRes: Response;
+      try {
+        pollRes = await fetch(`${APIFRAME_BASE}/jobs/${jobId}`, { headers });
+      } catch (err) {
+        console.error("[apiframe] poll failed", err);
+        continue;
+      }
+      if (!pollRes.ok) {
+        console.error("[apiframe] poll non-ok", pollRes.status);
+        continue;
+      }
+      const job = (await pollRes.json()) as {
+        status?: string;
+        data?: {
+          status?: string;
+          tracks?: Array<{ audioUrl?: string; audio_url?: string }>;
+        };
+        tracks?: Array<{ audioUrl?: string; audio_url?: string }>;
+        error?: string;
+      };
+      const status = job.status || job.data?.status;
+      if (status === "completed" || status === "succeeded") {
+        const tracks = job.data?.tracks || job.tracks || [];
+        const audioUrl = tracks[0]?.audioUrl || tracks[0]?.audio_url;
+        if (!audioUrl) {
+          console.error("[apiframe] completed but no audioUrl", job);
+          throw new Error("Música gerada, mas nenhum áudio foi retornado.");
+        }
+        return { audioUrl };
+      }
+      if (status === "failed" || status === "error") {
+        console.error("[apiframe] job failed", job);
+        throw new Error(job.error || "A geração da música falhou.");
+      }
+    }
+
+    throw new Error("Tempo limite excedido ao gerar a música.");
   });
