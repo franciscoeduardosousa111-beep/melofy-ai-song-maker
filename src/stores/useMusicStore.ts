@@ -46,15 +46,27 @@ type MusicState = {
   reset: () => void;
 };
 
-const initialState = {
+const initialState: Pick<
+  MusicState,
+  | "occasion"
+  | "customDescription"
+  | "selectedStyle"
+  | "generatedLyrics"
+  | "audioUrl"
+  | "isGenerating"
+  | "step"
+  | "processingStatus"
+  | "selectedPlan"
+  | "isLoggedIn"
+> = {
   occasion: "",
   customDescription: "",
   selectedStyle: "",
   generatedLyrics: "",
-  audioUrl: null as string | null,
+  audioUrl: null,
   isGenerating: false,
   step: 1,
-  processingStatus: "" as ProcessingStatus,
+  processingStatus: "",
   selectedPlan: "5",
   isLoggedIn: false,
 };
