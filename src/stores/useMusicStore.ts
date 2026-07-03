@@ -19,7 +19,7 @@ export const PROCESSING_STATUSES = [
   "Criando sua música...",
 ] as const;
 
-export type ProcessingStatus = (typeof PROCESSING_STATUSES)[number] | "";
+export type ProcessingStatus = string;
 
 type MusicState = {
   occasion: string;
