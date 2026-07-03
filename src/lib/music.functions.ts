@@ -128,45 +128,49 @@ export const generateMusic = createServerFn({ method: "POST" })
       throw new Error("Resposta inválida do serviço de música.");
     }
 
-    // 2. Poll
-    const started = Date.now();
-    while (Date.now() - started < POLL_TIMEOUT_MS) {
-      await sleep(POLL_INTERVAL_MS);
-      let pollRes: Response;
-      try {
-        pollRes = await fetch(`${APIFRAME_BASE}/jobs/${jobId}`, { headers });
-      } catch (err) {
-        console.error("[apiframe] poll failed", err);
-        continue;
-      }
-      if (!pollRes.ok) {
-        console.error("[apiframe] poll non-ok", pollRes.status);
-        continue;
-      }
-      const job = (await pollRes.json()) as {
-        status?: string;
-        data?: {
-          status?: string;
-          tracks?: Array<{ audioUrl?: string; audio_url?: string }>;
-        };
-        tracks?: Array<{ audioUrl?: string; audio_url?: string }>;
-        error?: string;
-      };
-      const status = job.status || job.data?.status;
-      if (status === "completed" || status === "succeeded") {
-        const tracks = job.data?.tracks || job.tracks || [];
-        const audioUrl = tracks[0]?.audioUrl || tracks[0]?.audio_url;
-        if (!audioUrl) {
-          console.error("[apiframe] completed but no audioUrl", job);
-          throw new Error("Música gerada, mas nenhum áudio foi retornado.");
-        }
-        return { audioUrl };
-      }
-      if (status === "failed" || status === "error") {
-        console.error("[apiframe] job failed", job);
-        throw new Error(job.error || "A geração da música falhou.");
-      }
+    return { jobId };
+  });
+
+const CheckJobInput = z.object({
+  jobId: z.string().min(1),
+});
+
+export const checkMusicJob = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => CheckJobInput.parse(input))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.APIFRAME_API_KEY;
+    if (!apiKey) throw new Error("Missing APIFRAME_API_KEY");
+
+    const headers = {
+      "Content-Type": "application/json",
+      "X-API-Key": apiKey,
+    };
+
+    let pollRes: Response;
+    try {
+      pollRes = await fetch(`${APIFRAME_BASE}/jobs/${data.jobId}`, { headers });
+    } catch (err) {
+      console.error("[apiframe] poll failed", err);
+      throw new Error("Falha ao consultar status do job.");
+    }
+    if (!pollRes.ok) {
+      const text = await pollRes.text().catch(() => "");
+      console.error("[apiframe] poll non-ok", pollRes.status, text);
+      throw new Error("Falha ao consultar status do job.");
     }
 
-    throw new Error("Tempo limite excedido ao gerar a música.");
+    const job = (await pollRes.json()) as {
+      status?: string;
+      data?: {
+        status?: string;
+        tracks?: Array<{ audioUrl?: string; audio_url?: string }>;
+      };
+      tracks?: Array<{ audioUrl?: string; audio_url?: string }>;
+      error?: string;
+    };
+    const status = job.status || job.data?.status || "unknown";
+    const tracks = job.data?.tracks || job.tracks || [];
+    const audioUrl = tracks[0]?.audioUrl || tracks[0]?.audio_url || null;
+
+    return { status, audioUrl, error: job.error || null };
   });
