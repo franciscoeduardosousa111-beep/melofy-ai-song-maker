@@ -86,21 +86,28 @@ export const generateMusic = createServerFn({ method: "POST" })
       "X-API-Key": apiKey,
     };
 
+    const body = JSON.stringify({
+      model: "suno",
+      prompt: data.lyrics,
+      sunoParams: {
+        custom_mode: true,
+        style: data.style,
+        title: data.title || "Minha Música",
+      },
+    });
+
+    console.log("[apiframe] POST", `${APIFRAME_BASE}/music/generate`, {
+      headers: { "Content-Type": "application/json", "X-API-Key": "***" },
+      body,
+    });
+
     // 1. Enqueue job
     let submitRes: Response;
     try {
       submitRes = await fetch(`${APIFRAME_BASE}/music/generate`, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          model: "suno",
-          prompt: data.lyrics,
-          sunoParams: {
-            custom_mode: true,
-            style: data.style,
-            title: data.title || "Minha Música",
-          },
-        }),
+        body,
       });
     } catch (err) {
       console.error("[apiframe] submit failed", err);
