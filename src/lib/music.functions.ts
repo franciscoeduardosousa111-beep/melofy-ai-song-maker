@@ -160,6 +160,7 @@ export const checkMusicJob = createServerFn({ method: "POST" })
       "X-API-Key": apiKey,
     };
 
+    console.log("[apiframe] GET", `${APIFRAME_BASE}/jobs/${data.jobId}`);
     let pollRes: Response;
     try {
       pollRes = await fetch(`${APIFRAME_BASE}/jobs/${data.jobId}`, { headers });
@@ -167,13 +168,14 @@ export const checkMusicJob = createServerFn({ method: "POST" })
       console.error("[apiframe] poll failed", err);
       throw new Error("Falha ao consultar status do job.");
     }
+    const pollText = await pollRes.text();
+    console.log("[apiframe] poll response", pollRes.status, pollText);
     if (!pollRes.ok) {
-      const text = await pollRes.text().catch(() => "");
-      console.error("[apiframe] poll non-ok", pollRes.status, text);
+      console.error("[apiframe] poll non-ok", pollRes.status, pollText);
       throw new Error("Falha ao consultar status do job.");
     }
 
-    const job = (await pollRes.json()) as {
+    let job: {
       status?: string;
       data?: {
         status?: string;
@@ -182,9 +184,15 @@ export const checkMusicJob = createServerFn({ method: "POST" })
       tracks?: Array<{ audioUrl?: string; audio_url?: string }>;
       error?: string;
     };
-    const status = job.status || job.data?.status || "unknown";
+    try {
+      job = JSON.parse(pollText);
+    } catch {
+      throw new Error("Resposta inválida ao consultar status do job.");
+    }
+    const status = (job.status || job.data?.status || "unknown").toLowerCase();
     const tracks = job.data?.tracks || job.tracks || [];
     const audioUrl = tracks[0]?.audioUrl || tracks[0]?.audio_url || null;
 
     return { status, audioUrl, error: job.error || null };
   });
+
