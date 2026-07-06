@@ -202,7 +202,7 @@ function ProcessingPage() {
     <div className="flex flex-1 flex-col gap-6">
       <div>
         <h1 className="text-2xl font-extrabold">Gerando sua música</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Isso pode levar até 3 minutos.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Isso pode levar até 10 minutos.</p>
       </div>
 
       <div className="flex flex-col gap-3">
