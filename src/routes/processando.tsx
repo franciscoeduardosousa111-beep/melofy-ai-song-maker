@@ -19,11 +19,13 @@ function ProcessingPage() {
   const isGenerating = useMusicStore((s) => s.isGenerating);
   const generatedLyrics = useMusicStore((s) => s.generatedLyrics);
   const audioUrl = useMusicStore((s) => s.audioUrl);
+  const pendingJobId = useMusicStore((s) => s.pendingJobId);
   const occasion = useMusicStore((s) => s.occasion);
   const selectedStyle = useMusicStore((s) => s.selectedStyle);
   const customDescription = useMusicStore((s) => s.customDescription);
   const setLyrics = useMusicStore((s) => s.setLyrics);
   const setAudioUrl = useMusicStore((s) => s.setAudioUrl);
+  const setPendingJobId = useMusicStore((s) => s.setPendingJobId);
   const setProcessingStatus = useMusicStore((s) => s.setProcessingStatus);
   const setIsGenerating = useMusicStore((s) => s.setIsGenerating);
   const setStep = useMusicStore((s) => s.setStep);
@@ -40,20 +42,93 @@ function ProcessingPage() {
   const [pollCount, setPollCount] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
 
-  // Phase 1: generate lyrics
   useEffect(() => {
     if (started.current) return;
     started.current = true;
+
+    const POLL_INTERVAL_MS = 10_000;
+    const MAX_POLL_MS = 600_000; // 10 minutes
+
+    const pollJob = async (jobId: string) => {
+      setMusicPhase("polling");
+      const pollStart = Date.now();
+
+      // Immediate first check to reuse completed jobs without waiting.
+      const first = await callCheckJob({ data: { jobId } });
+      console.log("[processando] first check", jobId, first);
+      if ((first.status === "completed" || first.status === "succeeded") && first.audioUrl) {
+        setAudioUrl(first.audioUrl);
+        setPendingJobId(null);
+        setMusicPhase("done");
+        setProcessingStatus("Música pronta!");
+        setStep(4);
+        setIsGenerating(false);
+        setTimeout(() => navigate({ to: "/resultado" }), 500);
+        return;
+      }
+      if (first.status === "failed" || first.status === "error") {
+        setPendingJobId(null);
+        throw new Error(
+          first.error ||
+            "A geração da música falhou. Tente novamente em alguns instantes."
+        );
+      }
+
+      while (Date.now() - pollStart < MAX_POLL_MS) {
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+        const elapsed = Math.floor((Date.now() - pollStart) / 1000);
+        setElapsedSec(elapsed);
+        setPollCount((c) => c + 1);
+
+        const check = await callCheckJob({ data: { jobId } });
+
+        if ((check.status === "completed" || check.status === "succeeded")) {
+          if (!check.audioUrl) {
+            throw new Error("Música gerada, mas nenhum áudio foi retornado.");
+          }
+          setAudioUrl(check.audioUrl);
+          setPendingJobId(null);
+          setMusicPhase("done");
+          setProcessingStatus("Música pronta!");
+          setStep(4);
+          setIsGenerating(false);
+          setTimeout(() => navigate({ to: "/resultado" }), 800);
+          return;
+        }
+
+        if (check.status === "failed" || check.status === "error") {
+          setPendingJobId(null);
+          throw new Error(
+            check.error ||
+              "A geração da música falhou. Tente novamente em alguns instantes."
+          );
+        }
+
+        setProcessingStatus(getPollingMessage(pollCount + 1, elapsed));
+      }
+
+      throw new Error("Tempo limite excedido ao gerar a música.");
+    };
 
     (async () => {
       try {
         setError(null);
         setIsGenerating(true);
-        setLyrics("");
-        setAudioUrl(null);
         setMusicPhase("idle");
         setPollCount(0);
         setElapsedSec(0);
+
+        // Reuse existing job if present — don't burn credits.
+        if (pendingJobId) {
+          console.log("[processando] resuming pending job", pendingJobId);
+          setProcessingStatus("Retomando job existente...");
+          setLyricStepIndex(2);
+          await pollJob(pendingJobId);
+          return;
+        }
+
+        setLyrics("");
+        setAudioUrl(null);
 
         setProcessingStatus(LYRIC_STEPS[0]);
         const { lyrics } = await callLyrics({
@@ -68,53 +143,17 @@ function ProcessingPage() {
         setProcessingStatus(LYRIC_STEPS[1]);
         setLyrics(lyrics);
 
-        // Small visual pause before music phase
         await new Promise((r) => setTimeout(r, 600));
 
-        // Phase 2: submit music job
         setMusicPhase("submitting");
         setProcessingStatus("Enviando letra para o estúdio...");
         const title = lyrics.split("\n")[0]?.trim() || "Minha Música";
         const { jobId } = await callMusic({
           data: { lyrics, style: selectedStyle || "Pop BR", title },
         });
+        setPendingJobId(jobId);
 
-        // Phase 3: poll job
-        setMusicPhase("polling");
-        const pollStart = Date.now();
-        const maxPollMs = 180_000;
-        const pollIntervalMs = 5_000;
-
-        while (Date.now() - pollStart < maxPollMs) {
-          await new Promise((r) => setTimeout(r, pollIntervalMs));
-          const elapsed = Math.floor((Date.now() - pollStart) / 1000);
-          setElapsedSec(elapsed);
-          setPollCount((c) => c + 1);
-
-          const check = await callCheckJob({ data: { jobId } });
-
-          if (check.status === "completed" || check.status === "succeeded") {
-            if (!check.audioUrl) {
-              throw new Error("Música gerada, mas nenhum áudio foi retornado.");
-            }
-            setAudioUrl(check.audioUrl);
-            setMusicPhase("done");
-            setProcessingStatus("Música pronta!");
-            setStep(4);
-            setIsGenerating(false);
-            setTimeout(() => navigate({ to: "/resultado" }), 800);
-            return;
-          }
-
-          if (check.status === "failed" || check.status === "error") {
-            throw new Error(check.error || "A geração da música falhou.");
-          }
-
-          // Still processing — rotate friendly messages
-          setProcessingStatus(getPollingMessage(pollCount + 1, elapsed));
-        }
-
-        throw new Error("Tempo limite excedido ao gerar a música.");
+        await pollJob(jobId);
       } catch (e) {
         setIsGenerating(false);
         setMusicPhase("error");
@@ -129,14 +168,17 @@ function ProcessingPage() {
     occasion,
     selectedStyle,
     customDescription,
+    pendingJobId,
     setLyrics,
     setAudioUrl,
+    setPendingJobId,
     setProcessingStatus,
     setIsGenerating,
     setStep,
     navigate,
     pollCount,
   ]);
+
 
   const done = musicPhase === "done" || (!isGenerating && !!audioUrl);
 
