@@ -69,7 +69,7 @@ const MusicInput = z.object({
   title: z.string().optional(),
 });
 
-const APIFRAME_BASE = "https://api.apiframe.pro/v2";
+const APIFRAME_BASE = "https://api.apiframe.ai/v2";
 const POLL_INTERVAL_MS = 5000;
 const POLL_TIMEOUT_MS = 180_000;
 
