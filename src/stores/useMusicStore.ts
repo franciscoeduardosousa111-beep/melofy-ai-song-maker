@@ -55,6 +55,7 @@ const initialState: Pick<
   | "selectedStyle"
   | "generatedLyrics"
   | "audioUrl"
+  | "pendingJobId"
   | "isGenerating"
   | "step"
   | "processingStatus"
@@ -66,6 +67,7 @@ const initialState: Pick<
   selectedStyle: "",
   generatedLyrics: "",
   audioUrl: null,
+  pendingJobId: null,
   isGenerating: false,
   step: 1,
   processingStatus: "",
