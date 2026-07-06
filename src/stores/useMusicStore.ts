@@ -90,6 +90,7 @@ export const useMusicStore = create<MusicState>()(
       setStep: (step) => set({ step }),
       setLyrics: (generatedLyrics) => set({ generatedLyrics }),
       setAudioUrl: (audioUrl) => set({ audioUrl }),
+      setPendingJobId: (pendingJobId) => set({ pendingJobId }),
       setProcessingStatus: (processingStatus) => set({ processingStatus }),
       setIsGenerating: (isGenerating) => set({ isGenerating }),
       reset: () => set({ ...initialState }),
