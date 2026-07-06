@@ -27,6 +27,7 @@ type MusicState = {
   selectedStyle: MusicStyle | "";
   generatedLyrics: string;
   audioUrl: string | null;
+  pendingJobId: string | null;
   isGenerating: boolean;
   step: number;
   processingStatus: ProcessingStatus;
@@ -41,6 +42,7 @@ type MusicState = {
   setStep: (step: number) => void;
   setLyrics: (lyrics: string) => void;
   setAudioUrl: (url: string | null) => void;
+  setPendingJobId: (id: string | null) => void;
   setProcessingStatus: (status: ProcessingStatus) => void;
   setIsGenerating: (v: boolean) => void;
   reset: () => void;
