@@ -114,17 +114,24 @@ export const generateMusic = createServerFn({ method: "POST" })
       throw new Error("Não foi possível iniciar a geração da música.");
     }
 
+    const submitText = await submitRes.text();
+    console.log("[apiframe] submit response", submitRes.status, submitText);
+
     if (!submitRes.ok) {
-      const text = await submitRes.text().catch(() => "");
-      console.error("[apiframe] submit non-ok", submitRes.status, text);
+      console.error("[apiframe] submit non-ok", submitRes.status, submitText);
       throw new Error("Falha ao solicitar geração da música.");
     }
 
-    const submitJson = (await submitRes.json()) as {
+    let submitJson: {
       jobId?: string;
       id?: string;
       data?: { jobId?: string; id?: string };
     };
+    try {
+      submitJson = JSON.parse(submitText);
+    } catch {
+      throw new Error("Resposta inválida do serviço de música.");
+    }
     const jobId =
       submitJson.jobId ||
       submitJson.id ||
