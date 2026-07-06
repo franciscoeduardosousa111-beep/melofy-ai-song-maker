@@ -86,38 +86,52 @@ export const generateMusic = createServerFn({ method: "POST" })
       "X-API-Key": apiKey,
     };
 
+    const body = JSON.stringify({
+      model: "suno",
+      prompt: data.lyrics,
+      sunoParams: {
+        custom_mode: true,
+        style: data.style,
+        title: data.title || "Minha Música",
+      },
+    });
+
+    console.log("[apiframe] POST", `${APIFRAME_BASE}/music/generate`, {
+      headers: { "Content-Type": "application/json", "X-API-Key": "***" },
+      body,
+    });
+
     // 1. Enqueue job
     let submitRes: Response;
     try {
       submitRes = await fetch(`${APIFRAME_BASE}/music/generate`, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          model: "suno",
-          prompt: data.lyrics,
-          sunoParams: {
-            custom_mode: true,
-            style: data.style,
-            title: data.title || "Minha Música",
-          },
-        }),
+        body,
       });
     } catch (err) {
       console.error("[apiframe] submit failed", err);
       throw new Error("Não foi possível iniciar a geração da música.");
     }
 
+    const submitText = await submitRes.text();
+    console.log("[apiframe] submit response", submitRes.status, submitText);
+
     if (!submitRes.ok) {
-      const text = await submitRes.text().catch(() => "");
-      console.error("[apiframe] submit non-ok", submitRes.status, text);
+      console.error("[apiframe] submit non-ok", submitRes.status, submitText);
       throw new Error("Falha ao solicitar geração da música.");
     }
 
-    const submitJson = (await submitRes.json()) as {
+    let submitJson: {
       jobId?: string;
       id?: string;
       data?: { jobId?: string; id?: string };
     };
+    try {
+      submitJson = JSON.parse(submitText);
+    } catch {
+      throw new Error("Resposta inválida do serviço de música.");
+    }
     const jobId =
       submitJson.jobId ||
       submitJson.id ||
@@ -146,6 +160,7 @@ export const checkMusicJob = createServerFn({ method: "POST" })
       "X-API-Key": apiKey,
     };
 
+    console.log("[apiframe] GET", `${APIFRAME_BASE}/jobs/${data.jobId}`);
     let pollRes: Response;
     try {
       pollRes = await fetch(`${APIFRAME_BASE}/jobs/${data.jobId}`, { headers });
@@ -153,13 +168,14 @@ export const checkMusicJob = createServerFn({ method: "POST" })
       console.error("[apiframe] poll failed", err);
       throw new Error("Falha ao consultar status do job.");
     }
+    const pollText = await pollRes.text();
+    console.log("[apiframe] poll response", pollRes.status, pollText);
     if (!pollRes.ok) {
-      const text = await pollRes.text().catch(() => "");
-      console.error("[apiframe] poll non-ok", pollRes.status, text);
+      console.error("[apiframe] poll non-ok", pollRes.status, pollText);
       throw new Error("Falha ao consultar status do job.");
     }
 
-    const job = (await pollRes.json()) as {
+    let job: {
       status?: string;
       data?: {
         status?: string;
@@ -168,9 +184,15 @@ export const checkMusicJob = createServerFn({ method: "POST" })
       tracks?: Array<{ audioUrl?: string; audio_url?: string }>;
       error?: string;
     };
-    const status = job.status || job.data?.status || "unknown";
+    try {
+      job = JSON.parse(pollText);
+    } catch {
+      throw new Error("Resposta inválida ao consultar status do job.");
+    }
+    const status = (job.status || job.data?.status || "unknown").toLowerCase();
     const tracks = job.data?.tracks || job.tracks || [];
     const audioUrl = tracks[0]?.audioUrl || tracks[0]?.audio_url || null;
 
     return { status, audioUrl, error: job.error || null };
   });
+

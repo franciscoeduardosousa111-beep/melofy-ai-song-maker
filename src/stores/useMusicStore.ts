@@ -27,6 +27,7 @@ type MusicState = {
   selectedStyle: MusicStyle | "";
   generatedLyrics: string;
   audioUrl: string | null;
+  pendingJobId: string | null;
   isGenerating: boolean;
   step: number;
   processingStatus: ProcessingStatus;
@@ -41,6 +42,7 @@ type MusicState = {
   setStep: (step: number) => void;
   setLyrics: (lyrics: string) => void;
   setAudioUrl: (url: string | null) => void;
+  setPendingJobId: (id: string | null) => void;
   setProcessingStatus: (status: ProcessingStatus) => void;
   setIsGenerating: (v: boolean) => void;
   reset: () => void;
@@ -53,6 +55,7 @@ const initialState: Pick<
   | "selectedStyle"
   | "generatedLyrics"
   | "audioUrl"
+  | "pendingJobId"
   | "isGenerating"
   | "step"
   | "processingStatus"
@@ -64,6 +67,7 @@ const initialState: Pick<
   selectedStyle: "",
   generatedLyrics: "",
   audioUrl: null,
+  pendingJobId: null,
   isGenerating: false,
   step: 1,
   processingStatus: "",
@@ -86,6 +90,7 @@ export const useMusicStore = create<MusicState>()(
       setStep: (step) => set({ step }),
       setLyrics: (generatedLyrics) => set({ generatedLyrics }),
       setAudioUrl: (audioUrl) => set({ audioUrl }),
+      setPendingJobId: (pendingJobId) => set({ pendingJobId }),
       setProcessingStatus: (processingStatus) => set({ processingStatus }),
       setIsGenerating: (isGenerating) => set({ isGenerating }),
       reset: () => set({ ...initialState }),
@@ -107,6 +112,7 @@ export const useMusicStore = create<MusicState>()(
         selectedStyle: state.selectedStyle,
         generatedLyrics: state.generatedLyrics,
         audioUrl: state.audioUrl,
+        pendingJobId: state.pendingJobId,
         selectedPlan: state.selectedPlan,
         isLoggedIn: state.isLoggedIn,
         step: state.step,
