@@ -112,6 +112,7 @@ export const useMusicStore = create<MusicState>()(
         selectedStyle: state.selectedStyle,
         generatedLyrics: state.generatedLyrics,
         audioUrl: state.audioUrl,
+        pendingJobId: state.pendingJobId,
         selectedPlan: state.selectedPlan,
         isLoggedIn: state.isLoggedIn,
         step: state.step,
